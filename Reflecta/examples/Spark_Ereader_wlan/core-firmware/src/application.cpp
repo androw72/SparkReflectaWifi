@@ -22,6 +22,7 @@
 #include "application.h"
 #include "sd-card-library.h"
 #include "ereader.h"
+#include <Reflecta.h>
 
 // set up variables using the SD utility library functions:
 Sd2Card card;
@@ -50,10 +51,17 @@ void setup()
     WiFi.on();
     WiFi.connect();
     // start listening for clients
-  server.begin();
+    server.begin();
  
-  Serial.begin(115200);
+    //Serial.begin(115200);
+    reflectaFrames::setup(115200);
+    reflectaFunctions::setup();
+    reflectaArduinoCore::setup();
+    reflectaHeartbeat::setup();
+    reflectaFunctions::push16(1);
+    reflectaHeartbeat::setFrameRate();
   
+
   //Register our Spark function here
 
   Spark.function("sd_file", sd_file_control);
@@ -141,13 +149,14 @@ void loop(void) {
     // echo all available bytes back to the client
     while (client.available()) {
       server.write(client.read());
-
+      reflectaFrames::loop(client); 
+      reflectaHeartbeat::loop(client);
     }
   } else {
     // if no client is yet connected, check for a new connection
     client = server.available();
     Serial.print("spark_wifi: client not connected \n");
-    delay(1000);
+    
   }
   
 }
