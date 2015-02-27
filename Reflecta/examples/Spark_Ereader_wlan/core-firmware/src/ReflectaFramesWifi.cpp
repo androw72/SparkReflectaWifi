@@ -288,7 +288,7 @@ void loop(TCPClient& client)
      switch (state)
      {
       case FrameInvalid:
-      Serial.print(F("frsmesWifi: frame invalid \n"));
+      Serial.print(F("FramesWifi: frame invalid \n"));
       delay(1000);
       break;
       

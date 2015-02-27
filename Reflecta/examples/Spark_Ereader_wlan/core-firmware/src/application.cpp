@@ -67,13 +67,13 @@ void setup()
   Spark.function("sd_file", sd_file_control);
   
 
-  //while (!Serial.available());
+  while (!Serial.available());
   
   //Serial.print("\nEreader...\n");
   ereader.setup(EPD_2_7);
   //ereader.display_wif("/IMAGES/LENA.WIF", 0, 0);
-  //ereader.display_wif("/IMAGES/WYOLUM.WIF", 0, 0);
-  //ereader.show();
+  ereader.display_wif("/IMAGES/WYOLUM.WIF", 0, 0);
+  ereader.show();
   //ereader.sleep(4000);
   
   
@@ -142,24 +142,31 @@ void setup()
   root.ls(LS_R | LS_DATE | LS_SIZE);
 }
 
+bool connected = false;
 void loop(void) {
      
     if (client.connected()) {
-    Serial.print("spark_wifi: client detected \n");
-    // echo all available bytes back to the client
-    while (client.available()) {
-      server.write(client.read());
-      reflectaFrames::loop(client); 
-      reflectaHeartbeat::loop(client);
+    if (!connected) {
+        Serial.print("spark_wifi: client connected \n");
+        connected = true;
     }
+    // if data from a client decode  the frames
+    while (client.available()) {
+      //server.write(client.read());
+      reflectaFrames::loop(client); 
+     }
+    reflectaHeartbeat::loop(client);
   } else {
     // if no client is yet connected, check for a new connection
-    client = server.available();
-    Serial.print("spark_wifi: client not connected \n");
+        if(client = server.available()){
+            connected = false;
+        }
+    }
+    //Serial.print("spark_wifi: client not connected \n");
     
   }
   
-}
+
 
 // This function gets called whenever there is a matching API request
 // the command string format is l<led number>,<state>
