@@ -71,29 +71,47 @@ namespace reflectaHeartbeat
   
   // Function table of all functions to call in heartbeat
   bool (*heartbeatFunctions[MaxFunctions])(TCPClient& client);
+  //bool (*heartbeatFunctions[MaxFunctions])();
 
   // Has the function finished for this heartbeat
   bool functionComplete[MaxFunctions];
 
   int functionsTop = 0;
 
+ 
   void bind(bool (*function)(TCPClient& client)) {
     heartbeatFunctions[functionsTop++] = function;
     //heartbeatFunctions[0] = function;
     //bool (*heartbeatFunctions_1)() = function;
     //function();
-  };
+  }
+  
+  
+  /*
+   void bind(bool (*function)()) {
+    heartbeatFunctions[functionsTop++] = function;
+    //heartbeatFunctions[0] = function;
+    //bool (*heartbeatFunctions_1)() = function;
+    //function();
+  }*/
+  
   
   uint32_t microsBetweenFrames = 100000;
   
   void setFrameRate(TCPClient& client) {
     int16_t framesPerSecond = reflectaFunctions::pop16(client);
     microsBetweenFrames = 1000000 / framesPerSecond;
-  };
+    Serial.print("setFrameRate_tcp: ");
+    Serial.println(microsBetweenFrames);
+  }
+  
   void setFrameRate() {
     int16_t framesPerSecond = reflectaFunctions::pop16();
     microsBetweenFrames = 1000000 / framesPerSecond;
-  };
+    Serial.print("setFrameRate_noTCP: ");
+    Serial.println(microsBetweenFrames);
+
+  }
   
   // Number of times loop is called and we're still waiting for one of our bound data
   // collection functions to finish
@@ -121,6 +139,8 @@ namespace reflectaHeartbeat
   
   bool finished = false;
   uint32_t nextHeartbeat = 0;
+  
+  
   void loop(TCPClient& client) {
     
     if (!finished) {
@@ -136,14 +156,18 @@ namespace reflectaHeartbeat
     
     if (finished) {
       
-      unsigned long currentTime = micros();
+      unsigned long currentTime = millis();
+        //Serial.print("current time: ");
+        //Serial.println(currentTime);
+
       if (currentTime >= nextHeartbeat) {
         
         sendHeartbeat(client);
         
         // Set the micros delay for when the next heartbeat should be sent
-        nextHeartbeat = currentTime + microsBetweenFrames;
-        
+        nextHeartbeat = currentTime + microsBetweenFrames/1000;
+        Serial.print("nextHeartbeat: ");
+        Serial.println(nextHeartbeat);
         // Zero out the heartbeat state
         collectingLoops = 0;
         idleLoops = 0;

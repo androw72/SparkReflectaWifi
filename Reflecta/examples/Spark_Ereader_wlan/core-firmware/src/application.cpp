@@ -45,8 +45,62 @@ TCPClient client;
 
 SYSTEM_MODE(MANUAL);
 
+bool heartbeat_dummy(TCPClient & client) {
+    return true;
+    
+}
+
+
+
+
+int button = 0;
+bool isPushed = false;
+bool released = true;
+
+bool myReadbutton(TCPClient & client){
+  if(isPushed){
+    reflectaHeartbeat::push(button, client);
+    button=0;
+    isPushed = false;
+    return true;
+  } 
+  else {
+    reflectaHeartbeat::push(0, client);
+    return true;
+  } 
+}
+ 
+void poll_button(){
+    
+    if(released){
+        if(!digitalRead(D5)){
+            isPushed = true;
+            button = 1;
+            Serial.println("isPushed");
+        }
+    }
+    if(isPushed){   
+        if(released){
+            released = false;
+            return;
+            }  
+        else{
+            return;
+            }
+        } 
+    else {
+        released = true;
+        return;
+        }
+}
+           
+                
 void setup()
 {
+    
+    //input pin for button
+    pinMode(D5, INPUT_PULLUP);
+    
     //start wlan
     WiFi.on();
     WiFi.connect();
@@ -60,6 +114,7 @@ void setup()
     reflectaHeartbeat::setup();
     reflectaFunctions::push16(1);
     reflectaHeartbeat::setFrameRate();
+    reflectaHeartbeat::bind(myReadbutton);
   
 
   //Register our Spark function here
@@ -67,7 +122,7 @@ void setup()
   Spark.function("sd_file", sd_file_control);
   
 
-  while (!Serial.available());
+  //while (!Serial.available());
   
   //Serial.print("\nEreader...\n");
   ereader.setup(EPD_2_7);
@@ -162,7 +217,9 @@ void loop(void) {
             connected = false;
         }
     }
-    //Serial.print("spark_wifi: client not connected \n");
+    
+    //poll buttons
+    poll_button();
     
   }
   

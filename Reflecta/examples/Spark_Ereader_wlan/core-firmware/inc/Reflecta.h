@@ -190,6 +190,7 @@ namespace reflectaHeartbeat
   
   // Bind a function to an interfaceId so it can be called by Reflecta Functions.  The assigned frame id is returned.
   void bind(bool (*function)(TCPClient& client));
+  //void bind(bool (*function)());
   
   void setFrameRate();
 
