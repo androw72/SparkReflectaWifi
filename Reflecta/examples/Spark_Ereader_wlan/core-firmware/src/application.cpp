@@ -50,48 +50,50 @@ bool heartbeat_dummy(TCPClient & client) {
     
 }
 
-
-
-
 int button = 0;
 bool isPushed = false;
 bool released = true;
+bool heartBeatDone = false;
 
 bool myReadbutton(TCPClient & client){
+  
+    //check the spark claud
+    if(Spark.connected()){
+        Spark.process();        
+    } else
+        Spark.connect();
+    
   if(isPushed){
     reflectaHeartbeat::push(button, client);
     button=0;
     isPushed = false;
+    heartBeatDone = true;
     return true;
-  } 
-  else {
+  } else {
     reflectaHeartbeat::push(0, client);
     return true;
   } 
 }
  
 void poll_button(){
-    
+    int pin_d5 = digitalRead(D5);
     if(released){
-        if(!digitalRead(D5)){
+        if(!pin_d5){
             isPushed = true;
+            released = false;
             button = 1;
             Serial.println("isPushed");
         }
-    }
-    if(isPushed){   
-        if(released){
-            released = false;
-            return;
-            }  
-        else{
-            return;
-            }
-        } 
-    else {
-        released = true;
-        return;
+    } else {
+        if(pin_d5 && heartBeatDone){
+            isPushed = false;
+            released = true;
+            heartBeatDone = false;
+            Serial.println("released");
         }
+            
+    }
+    
 }
            
                 
@@ -115,6 +117,9 @@ void setup()
     reflectaFunctions::push16(1);
     reflectaHeartbeat::setFrameRate();
     reflectaHeartbeat::bind(myReadbutton);
+    
+    //start spark claud
+    //Spark.connect();
   
 
   //Register our Spark function here
@@ -201,27 +206,28 @@ bool connected = false;
 void loop(void) {
      
     if (client.connected()) {
-    if (!connected) {
-        Serial.print("spark_wifi: client connected \n");
-        connected = true;
-    }
-    // if data from a client decode  the frames
-    while (client.available()) {
-      //server.write(client.read());
-      reflectaFrames::loop(client); 
-     }
-    reflectaHeartbeat::loop(client);
-  } else {
-    // if no client is yet connected, check for a new connection
+        if (!connected) {
+            Serial.print("spark_wifi: client connected \n");
+            connected = true;
+        }
+        // if data from a client decode  the frames
+        while (client.available()) {
+            //server.write(client.read());
+            reflectaFrames::loop(client); 
+        }
+        reflectaHeartbeat::loop(client);
+    } else {
+        // if no client is yet connected, check for a new connection
         if(client = server.available()){
             connected = false;
         }
-    }
-    
+    }   
     //poll buttons
     poll_button();
     
-  }
+
+      
+}
   
 
 
