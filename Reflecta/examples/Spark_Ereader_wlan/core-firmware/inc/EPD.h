@@ -72,7 +72,7 @@ public:
 	// clear display (anything -> white)
 	void clear() {
 		this->frame_fixed_repeat(0xff, EPD_compensate);
-		this->frame_fixed_repeat(0xff, EPD_white);
+                this->frame_fixed_repeat(0xff, EPD_white);
 		this->frame_fixed_repeat(0xaa, EPD_inverse);
 		this->frame_fixed_repeat(0xaa, EPD_normal);
 	}
@@ -100,12 +100,16 @@ public:
         
 	void frame_fixed(uint8_t fixed_value, EPD_stage stage);
 	void frame_data( const uint8_t *new_image, EPD_stage stage);
-	void frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage);
+	//void frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage);
+        void frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage, uint16_t first_line_no = 0, uint8_t line_count = 0);
+                
 
 	// stage_time frame refresh
 	void frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage);
 	void frame_data_repeat(const uint8_t *new_image, EPD_stage stage);
-	void frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage);
+	//void frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage);
+        void frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage, uint16_t first_line_no = 0, uint8_t line_count = 0);
+                
 
 	// convert temperature to compensation factor
 	int temperature_to_factor_10x(int temperature);

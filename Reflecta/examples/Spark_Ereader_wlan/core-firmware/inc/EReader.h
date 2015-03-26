@@ -71,6 +71,7 @@ class EReader{
   // clear screen
   void _erase();
   void _draw();
+  void _draw_partial(uint16_t first_line_no, uint8_t line_count);
  public:
   bool attached; // true if spi display is ready, false if "detached"
   bool initialized;
@@ -132,6 +133,7 @@ class EReader{
   
   // display new image.  Call when image is complete
   void show();
+  void showPartial(uint16_t first_line_no, uint8_t line_count);
 
   // power off and delay
   void sleep(uint32_t delay_ms);

@@ -467,7 +467,7 @@ void EReader::draw_box(uint16_t startx, uint16_t starty, uint16_t endx, uint16_t
 // display new image.  Call when image is complete
 void EReader::show(){
   // copy image data to old_image data
-  char buffer[epd_width];
+  //char buffer[epd_width];
 
   _erase();
   // display_char(epd_width / 2, epd_height / 2, '0' + pingpong, true);
@@ -477,12 +477,24 @@ void EReader::show(){
   clear();
 }
 
+void EReader::showPartial(uint16_t first_line_no, uint8_t line_count){
+  // copy image data to old_image data
+  //char buffer[epd_width];
+    Serial.println("ereader::showpartial");
+  //_erase_partial(first_line_no, line_count);
+  pingpong = !pingpong;
+  _draw_partial(first_line_no, line_count);
+  clear();
+  //EPD.end();
+}
+
 void EReader::sleep(uint32_t delay_ms){
   spi_detach();
   delay(delay_ms);
 }
 void EReader::wake(){
   spi_attach();
+  EPD.begin(); // power up the EPD panel
 }
 //***  ensure clock is ok for EPD
 void EReader::set_spi_for_epd() {
@@ -560,6 +572,7 @@ void EReader::_erase(){
 void EReader::_draw(){
   //*** maybe need to ensure clock is ok for EPD
   set_spi_for_epd();
+    Serial.println("ereader: _draw");
 
 #ifdef SLOW
   EPD.frame_cb_repeat(0, reader_wrap, EPD_inverse);
@@ -568,8 +581,27 @@ void EReader::_draw(){
   EPD.frame_cb(0, reader_wrap, EPD_inverse);
   EPD.frame_cb(0, reader_wrap, EPD_normal);
 #endif
-  // EPD.end();   // power down the EPD panel
+  EPD.end();   // power down the EPD panel
 }
+
+void EReader::_draw_partial(uint16_t first_line_no, uint8_t line_count){
+  //*** maybe need to ensure clock is ok for EPD
+  set_spi_for_epd();
+  Serial.println("ereader: _draw partial");
+
+#ifdef SLOW
+  EPD.frame_cb_repeat(0, reader_wrap, EPD_inverse, first_line_no, line_count);
+  EPD.frame_cb_repeat(0, reader_wrap, EPD_normal, first_line_no, line_count);
+#else
+  EPD.frame_cb(0, reader_wrap, EPD_inverse, first_line_no, line_count);
+  EPD.frame_cb(0, reader_wrap, EPD_normal, first_line_no, line_count);
+#endif
+  //anbr
+  EPD.end();   // power down the EPD panel
+}
+
+
+
 
 uint16_t EReader::put_char(uint16_t x, uint16_t y, uint16_t unic, bool color){
   uint32_t pos;

@@ -17,6 +17,8 @@
 //#include <pins_arduino.h>
 //#include <limits.h>
 
+#include "application.h"
+
 #include <spark_wiring_spi.h>
 
 #include "EPD.h"
@@ -375,14 +377,28 @@ void EPD_Class::frame_data(const uint8_t *image, EPD_stage stage){
   }
 }
 
-
+/*
 void EPD_Class::frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage) {
   static uint8_t buffer[264 / 8];
   for (uint8_t line = 0; line < this->lines_per_display; ++line) {
     reader(buffer, address + line * this->bytes_per_line, this->bytes_per_line);
     this->line(line, buffer, 0, false, stage);
   }
+}*/
+
+void EPD_Class::frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage, uint16_t first_line_no, uint8_t line_count) {
+	static uint8_t buffer[264 / 8];
+    if(line_count == 0)
+    {
+        line_count = this->lines_per_display;
+    }
+    for (uint8_t line = first_line_no; line < line_count + first_line_no ; ++line) {
+        reader(buffer, address + (line - first_line_no) * this->bytes_per_line, this->bytes_per_line);
+        this->line(line, buffer, 0, false, stage);
+    }
 }
+
+
 
 
 void EPD_Class::frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage) {
@@ -415,7 +431,7 @@ void EPD_Class::frame_data_repeat(const uint8_t *image, EPD_stage stage) {
 }
 
 
-void EPD_Class::frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage) {
+/*void EPD_Class::frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage) {
   long stage_time = this->factored_stage_time;
   do {
     unsigned long t_start = millis();
@@ -427,8 +443,34 @@ void EPD_Class::frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage 
       stage_time -= t_start - t_end + 1 + ULONG_MAX;
     }
   } while (stage_time > 0);
-}
+}*/
 
+void EPD_Class::frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage, uint16_t first_line_no, uint8_t line_count) {
+    //If we are only doing a sub-part of the screen then reduce staging time accordingly.
+    //BK: Check if this is actually correct to do...... (we will be executing the same number of SPI writes overall)
+    // So is it important for time? or number of times we write to the display......
+    long stage_time;
+    if(line_count > 0){
+        stage_time = ((((long)this->factored_stage_time) * line_count) / this->lines_per_display);
+    } else {
+        stage_time = this->factored_stage_time;
+    }
+    Serial.println("stage_time: "+ String(stage_time, DEC));
+    Serial.println("line_count: "+ String(line_count, DEC));
+    Serial.println("first_line_no: : "+ String(first_line_no, DEC));
+    
+    
+	do {
+		unsigned long t_start = millis();
+		this->frame_cb(address, reader, stage, first_line_no, line_count);
+		unsigned long t_end = millis();
+		if (t_end > t_start) {
+			stage_time -= t_end - t_start;
+		} else {
+			stage_time -= t_start - t_end + 1 + ULONG_MAX;
+		}
+	} while (stage_time > 0);
+}
 
 void EPD_Class::line(uint16_t line, const uint8_t *data, uint8_t fixed_value, bool read_progmem, EPD_stage stage) {
   // charge pump voltage levels

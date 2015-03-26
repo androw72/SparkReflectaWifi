@@ -106,8 +106,12 @@ void setup()
     //start wlan
     WiFi.on();
     WiFi.connect();
+    while(!WiFi.ready());
     // start listening for clients
     server.begin();
+    
+    //Spark.connect();
+    //while(!Spark.connected());
  
     //Serial.begin(115200);
     reflectaFrames::setup(115200);
