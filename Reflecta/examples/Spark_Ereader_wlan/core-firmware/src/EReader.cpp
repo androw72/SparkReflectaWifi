@@ -16,7 +16,7 @@
 #include "EPD.h"
 #include <math.h>
 //#include "S5813A.h"
-
+#define _debug_
 #define SLOW 1
 
 
@@ -69,11 +69,13 @@ void EReader::error(int code_num){
  */
 void EReader::spi_attach(){	
   if(!attached){
+      
     SPI.begin();
     pinMode(SCK, OUTPUT);
     pinMode(MOSI, OUTPUT);	
     pinMode(MISO, INPUT);
     set_spi_for_epd();
+    
     EPD.begin(); // power up the EPD panel	
     attached = true;
   }
@@ -85,6 +87,7 @@ void EReader::spi_attach(){
 void EReader::spi_detach(){
   if(attached){
     EPD.end();
+    
     SPI.end();
     pinMode(SCK, OUTPUT);
     pinMode(MOSI, OUTPUT);
@@ -469,23 +472,29 @@ void EReader::show(){
   // copy image data to old_image data
   //char buffer[epd_width];
 
-  _erase();
+EPD.begin();  
+_erase();
   // display_char(epd_width / 2, epd_height / 2, '0' + pingpong, true);
   pingpong = !pingpong;
   
   _draw();
   clear();
+  EPD.end();  
 }
 
 void EReader::showPartial(uint16_t first_line_no, uint8_t line_count){
   // copy image data to old_image data
   //char buffer[epd_width];
+#ifdef _debug_
     Serial.println("ereader::showpartial");
+#endif
   //_erase_partial(first_line_no, line_count);
   pingpong = !pingpong;
+  EPD.begin();  
+  _erase_partial(first_line_no, line_count);
   _draw_partial(first_line_no, line_count);
   clear();
-  //EPD.end();
+  EPD.end();
 }
 
 void EReader::sleep(uint32_t delay_ms){
@@ -494,14 +503,14 @@ void EReader::sleep(uint32_t delay_ms){
 }
 void EReader::wake(){
   spi_attach();
-  EPD.begin(); // power up the EPD panel
+  //EPD.begin(); // power up the EPD panel
 }
 //***  ensure clock is ok for EPD
 void EReader::set_spi_for_epd() {
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE0);
   //SPI.setClockDivider(SPI_CLOCK_DIV4);
-  SPI.setClockDivider(SPI_CLOCK_DIV16);
+  SPI.setClockDivider(SPI_CLOCK_DIV4);
   
 }
 
@@ -557,8 +566,13 @@ void EReader::_erase(){
 
   //*** maybe need to ensure clock is ok for EPD
   set_spi_for_epd();
+  
+    
+#ifdef _debug_
+Serial.println("ereader: _erase");
+#endif
 
-  EPD.begin(); // power up the EPD panel
+  //---EPD.begin(); // power up the EPD panel
 #ifdef SLOW
   EPD.setFactor(temperature); // adjust for current temperature
   EPD.frame_cb_repeat(0, reader_wrap, EPD_compensate);
@@ -567,12 +581,41 @@ void EReader::_erase(){
   EPD.frame_cb(0, reader_wrap, EPD_compensate);
   EPD.frame_cb(0, reader_wrap, EPD_white);  
 #endif
+  
+//EPD.end();   // power down the EPD panel
+}
+
+void EReader::_erase_partial(uint16_t first_line_no, uint8_t line_count){
+  int temperature=25; // TJS: not used in badge (assume room temperature)
+
+  //*** maybe need to ensure clock is ok for EPD
+  set_spi_for_epd();
+    
+#ifdef _debug_
+Serial.println("ereader: _erase");
+#endif
+
+  //---EPD.begin(); // power up the EPD panel
+#ifdef SLOW
+  EPD.setFactor(temperature); // adjust for current temperature
+  EPD.frame_cb_repeat(0, reader_wrap, EPD_compensate, first_line_no, line_count);
+  EPD.frame_cb_repeat(0, reader_wrap, EPD_white, first_line_no, line_count);  
+#else
+  //EPD.frame_cb(0, reader_wrap, EPD_compensate);
+  //EPD.frame_cb(0, reader_wrap, EPD_white);  
+#endif
+
 }
 
 void EReader::_draw(){
-  //*** maybe need to ensure clock is ok for EPD
-  set_spi_for_epd();
+    
+    //*** maybe need to ensure clock is ok for EPD
+    set_spi_for_epd();
+#ifdef _debug_
     Serial.println("ereader: _draw");
+#endif
+    
+//---EPD.begin(); // power up the EPD panel
 
 #ifdef SLOW
   EPD.frame_cb_repeat(0, reader_wrap, EPD_inverse);
@@ -581,14 +624,17 @@ void EReader::_draw(){
   EPD.frame_cb(0, reader_wrap, EPD_inverse);
   EPD.frame_cb(0, reader_wrap, EPD_normal);
 #endif
-  EPD.end();   // power down the EPD panel
+  //---EPD.end();   // power down the EPD panel
 }
 
 void EReader::_draw_partial(uint16_t first_line_no, uint8_t line_count){
   //*** maybe need to ensure clock is ok for EPD
   set_spi_for_epd();
+  #ifdef _debug_
   Serial.println("ereader: _draw partial");
-
+  #endif
+ 
+//---EPD.begin(); // power up the EPD panel
 #ifdef SLOW
   EPD.frame_cb_repeat(0, reader_wrap, EPD_inverse, first_line_no, line_count);
   EPD.frame_cb_repeat(0, reader_wrap, EPD_normal, first_line_no, line_count);
@@ -597,7 +643,7 @@ void EReader::_draw_partial(uint16_t first_line_no, uint8_t line_count){
   EPD.frame_cb(0, reader_wrap, EPD_normal, first_line_no, line_count);
 #endif
   //anbr
-  EPD.end();   // power down the EPD panel
+  //---EPD.end();   // power down the EPD panel
 }
 
 

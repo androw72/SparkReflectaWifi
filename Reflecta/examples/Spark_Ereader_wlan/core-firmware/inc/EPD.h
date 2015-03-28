@@ -98,14 +98,16 @@ public:
 
 	// single frame refresh
         
-	void frame_fixed(uint8_t fixed_value, EPD_stage stage);
+	//void frame_fixed(uint8_t fixed_value, EPD_stage stage);
+        void frame_fixed(uint8_t fixed_value, EPD_stage stage, uint16_t first_line_no = 0, uint8_t line_count= 0);
 	void frame_data( const uint8_t *new_image, EPD_stage stage);
 	//void frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage);
         void frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage, uint16_t first_line_no = 0, uint8_t line_count = 0);
                 
 
 	// stage_time frame refresh
-	void frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage);
+	//void frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage);
+        void frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage, uint16_t first_line_no=0, uint8_t line_count=0);
 	void frame_data_repeat(const uint8_t *new_image, EPD_stage stage);
 	//void frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage);
         void frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage stage, uint16_t first_line_no = 0, uint8_t line_count = 0);

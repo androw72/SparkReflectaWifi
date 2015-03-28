@@ -24,6 +24,8 @@
 #include "ereader.h"
 #include <Reflecta.h>
 
+//#define _cloud_
+
 // set up variables using the SD utility library functions:
 Sd2Card card;
 SdVolume volume;
@@ -58,10 +60,12 @@ bool heartBeatDone = false;
 bool myReadbutton(TCPClient & client){
   
     //check the spark claud
+    #ifdef _cloud_
     if(Spark.connected()){
         Spark.process();        
     } else
         Spark.connect();
+    #endif
     
   if(isPushed){
     reflectaHeartbeat::push(button, client);
@@ -136,8 +140,10 @@ void setup()
   //Serial.print("\nEreader...\n");
   ereader.setup(EPD_2_7);
   //ereader.display_wif("/IMAGES/LENA.WIF", 0, 0);
+  ereader.wake();
   ereader.display_wif("/IMAGES/WYOLUM.WIF", 0, 0);
   ereader.show();
+  //ereader.sleep(100);
   //ereader.sleep(4000);
   
   

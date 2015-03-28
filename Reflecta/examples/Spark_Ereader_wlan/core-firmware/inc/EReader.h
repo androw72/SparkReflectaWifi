@@ -70,6 +70,7 @@ class EReader{
   bool pingpong;
   // clear screen
   void _erase();
+  void _erase_partial(uint16_t first_line_no, uint8_t line_count);
   void _draw();
   void _draw_partial(uint16_t first_line_no, uint8_t line_count);
  public:

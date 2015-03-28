@@ -18,11 +18,10 @@
 //#include <limits.h>
 
 #include "application.h"
-
 #include <spark_wiring_spi.h>
-
 #include "EPD.h"
 
+#define _debug_
 // delays - more consistent naming
 #define Delay_ms(ms) delay(ms)
 #define Delay_us(us) delayMicroseconds(us)
@@ -364,11 +363,26 @@ int EPD_Class::temperature_to_factor_10x(int temperature) {
 // the image is arranged by line which matches the display size
 // so smallest would have 96 * 32 bytes
 
+
+/*
 void EPD_Class::frame_fixed(uint8_t fixed_value, EPD_stage stage) {
   for (uint8_t line = 0; line < this->lines_per_display ; ++line) {
     this->line(line, 0, fixed_value, false, stage);
   }
+}*/
+
+void EPD_Class::frame_fixed(uint8_t fixed_value, EPD_stage stage, uint16_t first_line_no, uint8_t line_count) {
+	//static uint8_t buffer[264 / 8];
+    if(line_count == 0)
+    {
+        line_count = this->lines_per_display;
+    }
+    for (uint8_t line = first_line_no; line < line_count + first_line_no ; ++line) {
+        //reader(buffer, address + (line - first_line_no) * this->bytes_per_line, this->bytes_per_line);
+        this->line(line, 0, fixed_value, false, stage);
+    }
 }
+
 
 
 void EPD_Class::frame_data(const uint8_t *image, EPD_stage stage){
@@ -400,7 +414,7 @@ void EPD_Class::frame_cb(uint32_t address, EPD_reader *reader, EPD_stage stage, 
 
 
 
-
+/*
 void EPD_Class::frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage) {
   long stage_time = this->factored_stage_time;
   do {
@@ -413,7 +427,37 @@ void EPD_Class::frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage) {
       stage_time -= t_start - t_end + 1 + ULONG_MAX;
     }
   } while (stage_time > 0);
-}
+}*/
+
+/*
+void EPD_Class::frame_fixed_repeat(uint8_t fixed_value, EPD_stage stage, uint16_t first_line_no, uint8_t line_count) {
+    //If we are only doing a sub-part of the screen then reduce staging time accordingly.
+    //BK: Check if this is actually correct to do...... (we will be executing the same number of SPI writes overall)
+    // So is it important for time? or number of times we write to the display......
+    long stage_time;
+    if(line_count > 0){
+        stage_time = ((((long)this->factored_stage_time) * line_count *8) / this->lines_per_display);
+    } else {
+        stage_time = this->factored_stage_time;
+    }
+    
+    #ifdef _debug_
+    Serial.println("stage_time: "+ String(stage_time, DEC));
+    Serial.println("line_count: "+ String(line_count, DEC));
+    Serial.println("first_line_no: : "+ String(first_line_no, DEC));
+    #endif   
+	do {
+		unsigned long t_start = millis();
+		this->frame_fixed(fixed_value, stage, first_line_no, line_count);
+		unsigned long t_end = millis();
+		if (t_end > t_start) {
+			stage_time -= t_end - t_start;
+		} else {
+			stage_time -= t_start - t_end + 1 + ULONG_MAX;
+		}
+	} while (stage_time > 0);
+}*/
+
 
 
 void EPD_Class::frame_data_repeat(const uint8_t *image, EPD_stage stage) {
@@ -451,13 +495,16 @@ void EPD_Class::frame_cb_repeat(uint32_t address, EPD_reader *reader, EPD_stage 
     // So is it important for time? or number of times we write to the display......
     long stage_time;
     if(line_count > 0){
-        stage_time = ((((long)this->factored_stage_time) * line_count) / this->lines_per_display);
+        stage_time = ((((long)this->factored_stage_time) * line_count *8) / this->lines_per_display);
     } else {
         stage_time = this->factored_stage_time;
     }
+    
+    #ifdef _debug_
     Serial.println("stage_time: "+ String(stage_time, DEC));
     Serial.println("line_count: "+ String(line_count, DEC));
     Serial.println("first_line_no: : "+ String(first_line_no, DEC));
+    #endif
     
     
 	do {
